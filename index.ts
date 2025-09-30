@@ -6,6 +6,7 @@ import configure from "./routers";
 // NEW: state + live updates for the dashboard
 import * as store from "./store";
 import { sseHandler, pushUpsert } from "./sse";
+import * as hub from "./ocppHub";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -103,6 +104,7 @@ wss.on("connection", (ws, request) => {
   ws.on("error", onSocketPostError);
 
   const cpId = getChargePointId(request?.url || undefined) || "UNKNOWN-CP";
+  hub.register(cpId, ws);                     // <-- register
   console.log(`WebSocket connection established (${cpId}) with protocol=${(ws as any).protocol}`);
 
   // Keepalive: ping every 30s; terminate if no pong
@@ -138,6 +140,13 @@ wss.on("connection", (ws, request) => {
     }
 
     const [msgType, uniqueId, action, payload] = frame;
+
+    
+    // C) resolve replies to server-initiated calls
+    if (msgType === 3 || msgType === 4) {
+      if (typeof uniqueId === "string") hub.noteReply(ws, msgType, uniqueId, frame.slice(2));
+      return;
+    }
 
     // We only handle client CALLs here: [2, "<id>", "<Action>", {..}]
     if (msgType !== 2 || typeof uniqueId !== "string" || typeof action !== "string") {
@@ -218,6 +227,7 @@ wss.on("connection", (ws, request) => {
 
   ws.on("close", () => {
     clearInterval(ka);
+    hub.unregister(cpId);  
     const c = store.markDisconnected(cpId);
     if (c) pushUpsert(c);
     console.log(`WebSocket closed (${cpId})`);

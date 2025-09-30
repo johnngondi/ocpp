@@ -33,6 +33,7 @@ const routers_1 = __importDefault(require("./routers"));
 // NEW: state + live updates for the dashboard
 const store = __importStar(require("./store"));
 const sse_1 = require("./sse");
+const hub = __importStar(require("./ocppHub"));
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3000;
 function onSocketPreError(err) {
@@ -114,6 +115,7 @@ wss.on("connection", (ws, request) => {
     console.info("Negotiated subprotocol:", ws.protocol);
     ws.on("error", onSocketPostError);
     const cpId = getChargePointId((request === null || request === void 0 ? void 0 : request.url) || undefined) || "UNKNOWN-CP";
+    hub.register(cpId, ws); // <-- register
     console.log(`WebSocket connection established (${cpId}) with protocol=${ws.protocol}`);
     // Keepalive: ping every 30s; terminate if no pong
     let alive = true;
@@ -152,6 +154,12 @@ wss.on("connection", (ws, request) => {
             return;
         }
         const [msgType, uniqueId, action, payload] = frame;
+        // C) resolve replies to server-initiated calls
+        if (msgType === 3 || msgType === 4) {
+            if (typeof uniqueId === "string")
+                hub.noteReply(ws, msgType, uniqueId, frame.slice(2));
+            return;
+        }
         // We only handle client CALLs here: [2, "<id>", "<Action>", {..}]
         if (msgType !== 2 || typeof uniqueId !== "string" || typeof action !== "string") {
             return; // ignore (could also close with FormationViolation)
@@ -218,6 +226,7 @@ wss.on("connection", (ws, request) => {
     });
     ws.on("close", () => {
         clearInterval(ka);
+        hub.unregister(cpId);
         const c = store.markDisconnected(cpId);
         if (c)
             (0, sse_1.pushUpsert)(c);

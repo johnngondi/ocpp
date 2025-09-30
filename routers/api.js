@@ -6,20 +6,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const user_1 = __importDefault(require("./user"));
 const chargers_1 = __importDefault(require("./chargers"));
+const control_1 = __importDefault(require("./control"));
 function api() {
     const router = (0, express_1.Router)();
     router
         .use((req, res, next) => {
         if (!req.body) {
-            next(new Error('Bad request'));
+            next(new Error("Bad request"));
             return;
         }
         next();
     })
-        .use('/v1', apiV1())
+        .use("/v1", apiV1())
         .use((req, res, next) => {
         res.json({
-            error: 'Invalid route',
+            error: "Invalid route",
         });
     });
     return router;
@@ -29,10 +30,11 @@ function apiV1() {
     const router = (0, express_1.Router)();
     router
         .use((req, res, next) => {
-        console.log('API V1');
+        console.log("API V1");
         next();
     })
-        .use('/users', (0, user_1.default)())
-        .use('/chargers', (0, chargers_1.default)()); // <-- NEW
+        .use("/users", (0, user_1.default)())
+        .use("/chargers", (0, chargers_1.default)())
+        .use("/control", (0, control_1.default)());
     return router;
 }

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const user_1 = __importDefault(require("./user"));
+const chargers_1 = __importDefault(require("./chargers"));
 function api() {
     const router = (0, express_1.Router)();
     router
@@ -31,6 +32,7 @@ function apiV1() {
         console.log('API V1');
         next();
     })
-        .use('/users', (0, user_1.default)());
+        .use('/users', (0, user_1.default)())
+        .use('/chargers', (0, chargers_1.default)()); // <-- NEW
     return router;
 }

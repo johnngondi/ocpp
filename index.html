@@ -218,7 +218,7 @@
 
       // delete
       card.querySelector('.delete').onclick = async () => {
-        try { await fetch(`/api/v1/chargers/${encodeURIComponent(c.id)}`, { method: 'DELETE' }); } catch {}
+        try { await fetch(`/api/chargers/${encodeURIComponent(c.id)}`, { method: 'DELETE' }); } catch {}
         card.remove();
         delete cards[c.id];
         toggleEmpty();
@@ -245,7 +245,7 @@
     // Initial load
     async function preload(){
       try{
-        const res = await fetch('/api/v1/chargers', { cache: 'no-store' });
+        const res = await fetch('/api/chargers', { cache: 'no-store' });
         const data = await res.json();
         (data?.chargers ?? []).forEach(renderCharger);
         toggleEmpty();

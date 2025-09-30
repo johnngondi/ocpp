@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import users from './user';
+import chargers from './chargers';
 
 export default function api() {
     const router = Router();
@@ -31,7 +32,8 @@ function apiV1() {
             console.log('API V1');
             next();
         })
-        .use('/users', users());
+        .use('/users', users())
+    .use('/chargers', chargers()); // <-- NEW
 
     return router;
 }

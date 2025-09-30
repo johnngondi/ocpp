@@ -1,29 +1,39 @@
+// routers/index.ts
 import express, { Application, Request, Response, NextFunction } from 'express';
 import { json } from 'body-parser';
 import { resolve } from 'path';
 import api from './api';
+import { sseHandler } from '../sse';
 
 export default function configure(app: Application) {
-    app
-        .get('/', (req, res, next) => {
-            res.sendFile(resolve(__dirname, '../index.html'));
-        })
-        .use(express.static('public'))
-        .use(json())
-        .use('/api', api())
-        .use('/error', (req, res, next) => {
-            next(new Error('Other Error'));
-        })
-        .use((req, res, next) => {
-            next(new Error('Not Found'));
-        })
-        .use((error: Error, req: Request, res: Response, next: NextFunction) => {
-            switch (error.message) {
-                case 'Not Found':
-                    res.sendFile(resolve(__dirname, '../notfound.html'));
-                    return;
-            }
+  // 1) Static assets first (CSS, JS, images)
+  app.use(express.static('public'));
 
-            res.sendFile(resolve(__dirname, '../error.html'));
-        });
+  // 2) JSON body parsing for API
+  app.use(json());
+
+  // 3) SSE stream (dashboard listens here)
+  app.get('/events', sseHandler);
+
+  // 4) Versioned API
+  app.use('/api', api()); // inside, you mounted /v1/...
+
+  // 5) Frontend entry (serve the SPA)
+  app.get('/', (_req, res) => {
+    res.sendFile(resolve(process.cwd(), 'public/index.html'));
+  });
+
+  // 6) Test route (optional)
+  app.use('/error', (_req, _res, next) => next(new Error('Other Error')));
+
+  // 7) 404 -> custom not found page
+  app.use((_req, _res, next) => next(new Error('Not Found')));
+
+  // 8) Error pages
+  app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
+    if (error.message === 'Not Found') {
+      return res.sendFile(resolve(process.cwd(), 'notfound.html'));
+    }
+    return res.sendFile(resolve(process.cwd(), 'error.html'));
+  });
 }

@@ -37,6 +37,8 @@ function writeFile(data: StoreShape) {
   fs.writeFileSync(FILE, JSON.stringify(data, null, 2), "utf8");
 }
 
+
+
 let state: StoreShape = readFile();
 let saveTimer: NodeJS.Timeout | null = null;
 function scheduleSave(){ if (saveTimer) clearTimeout(saveTimer); saveTimer = setTimeout(() => writeFile(state), 100); }
@@ -85,4 +87,9 @@ export function removeCharger(id: string) {
   state.chargers = state.chargers.filter(x => x.id !== id);
   scheduleSave();
   return state.chargers.length !== before;
+}
+
+// store.ts
+export function getById(id: string) {
+  return state.chargers.find(x => x.id === id) || null;
 }

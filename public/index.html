@@ -1,93 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Delta Energy — Charger Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#ffffff; --panel:#f2f1f1; --text:#111827; --muted:#6b7280; --accent:#2563eb;
-      --border:#e5e7eb; --border-strong:#d1d5db; --row:#f9fafb;
-      --ok-bg:#ecfdf5; --ok:#065f46; --ok-br:#a7f3d0;
-      --warn-bg:#fff7ed; --warn:#9a3412; --warn-br:#fed7aa;
-      --bad-bg:#fef2f2; --bad:#991b1b; --bad-br:#fecaca;
-      --conn-bg:#f8fafc; --conn-br:#e2e8f0;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
-    a{color:var(--accent);text-decoration:none}
-    .bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;background:#f3f4f6;border-bottom:1px solid var(--border);padding: 12px 50px}
-    .brand{font-weight:700;letter-spacing:.3px}
-    .sub{color:var(--muted);font-size:14px}
-    .wrap{max-width:1100px;margin:0 auto;padding:18px}
-    .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-    .search{flex:1;min-width:220px}
-    .search input{width:100%;background:#fff;border:1px solid var(--border-strong);border-radius:10px;padding:10px 12px;color:var(--text)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-    .card-head{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .title{display:flex;align-items:center;gap:8px}
-    .id{font-weight:700;font-size:18px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border-strong);background:#f3f4f6;color:#374151;white-space:nowrap}
-    .badge.online{background:var(--ok-bg);border-color:var(--ok-br);color:var(--ok)}
-    .badge.offline{background:var(--bad-bg);border-color:var(--bad-br);color:var(--bad)}
-    .meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px;margin-top:10px}
-    .k{display:block;color:var(--muted);font-size:12px}
-    .v{display:block;font-weight:600}
-    .connectors h4{margin:14px 0 8px 0;font-size:14px;color:var(--muted)}
-    .conn{border:1px solid var(--conn-br);border-radius:10px;padding:8px;margin-bottom:6px;background:var(--conn-bg)}
-    .conn .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border-strong);background:#f3f4f6;color:#374151}
-    .pill.avail{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-br)}
-    .pill.unavail{background:var(--bad-bg);color:var(--bad);border-color:var(--bad-br)}
-    .pill.charge{background:#eff6ff;color:#1e40af;border-color:#bfdbfe}
-    .pill.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-br)}
-    .err{color:var(--bad);font-size:12px;margin-top:4px}
-    .actions{display:flex;justify-content:flex-end;margin-top:10px;gap:8px}
-    .btn{background:#ffffff;border:1px solid var(--border-strong);padding:8px 10px;border-radius:10px;color: var(--text);cursor:pointer}
-    .btn:hover{background:var(--row)}
-    .btn.danger{background:#fee2e2;border-color:#fecaca;color:#991b1b}
-    .btn.ghost{background:transparent}
-    .hidden{display:none}
-    .empty{border:1px dashed var(--border);border-radius:12px;padding:20px;text-align:center;color:#var(--muted);background:#fafafa}
-    .footer{color:#var(--muted);font-size:12px;text-align:center;margin-top:24px}
-    @media (max-width:700px){ .meta{grid-template-columns:repeat(1,minmax(0,1fr))} }
-  </style>
-</head>
-<body>
-  <header class="bar">
-    <div class="brand">
-      <!-- ⚡ Delta Energy -->
-       <img src="https://www.deltaenergysystems.co.ke/wp-content/uploads/2023/04/Group-236.png" alt="Delta Energy" style="height:50px;vertical-align:middle;margin-right:8px"/>
-    </div>
-    <div class="sub">OCPP Live Status</div>
-  </header>
-
-  <main class="wrap">
-    <div class="toolbar">
-      <div class="search">
-        <input id="q" type="search" placeholder="Search by ID, vendor, model, serial…" />
+  <head>
+    <meta charset="UTF-8" />
+    <title>Delta Energy — Charger Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --panel: #f2f1f1;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #2563eb;
+        --border: #e5e7eb;
+        --border-strong: #d1d5db;
+        --row: #f9fafb;
+        --ok-bg: #ecfdf5;
+        --ok: #065f46;
+        --ok-br: #a7f3d0;
+        --warn-bg: #fff7ed;
+        --warn: #9a3412;
+        --warn-br: #fed7aa;
+        --bad-bg: #fef2f2;
+        --bad: #991b1b;
+        --bad-br: #fecaca;
+        --conn-bg: #f8fafc;
+        --conn-br: #e2e8f0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, Segoe UI, Arial, sans-serif;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
+        background: #f3f4f6;
+        border-bottom: 1px solid var(--border);
+        padding: 12px 50px;
+      }
+      .brand {
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .search {
+        flex: 1;
+        min-width: 220px;
+      }
+      .search input {
+        width: 100%;
+        background: #fff;
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: var(--text);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .card-head {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .id {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-strong);
+        background: #f3f4f6;
+        color: #374151;
+        white-space: nowrap;
+      }
+      .badge.online {
+        background: var(--ok-bg);
+        border-color: var(--ok-br);
+        color: var(--ok);
+      }
+      .badge.offline {
+        background: var(--bad-bg);
+        border-color: var(--bad-br);
+        color: var(--bad);
+      }
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 12px;
+        margin-top: 10px;
+      }
+      .k {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .v {
+        display: block;
+        font-weight: 600;
+      }
+      .connectors h4 {
+        margin: 14px 0 8px 0;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      .conn {
+        border: 1px solid var(--conn-br);
+        border-radius: 10px;
+        padding: 8px;
+        margin-bottom: 6px;
+        background: var(--conn-bg);
+      }
+      .conn .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        border: 1px solid var(--border-strong);
+        background: #f3f4f6;
+        color: #374151;
+      }
+      .pill.avail {
+        background: var(--ok-bg);
+        color: var(--ok);
+        border-color: var(--ok-br);
+      }
+      .pill.unavail {
+        background: var(--bad-bg);
+        color: var(--bad);
+        border-color: var(--bad-br);
+      }
+      .pill.charge {
+        background: #eff6ff;
+        color: #1e40af;
+        border-color: #bfdbfe;
+      }
+      .pill.warn {
+        background: var(--warn-bg);
+        color: var(--warn);
+        border-color: var(--warn-br);
+      }
+      .err {
+        color: var(--bad);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+        gap: 8px;
+      }
+      .btn {
+        background: #ffffff;
+        border: 1px solid var(--border-strong);
+        padding: 8px 10px;
+        border-radius: 10px;
+        color: var(--text);
+        cursor: pointer;
+      }
+      .btn:hover {
+        background: var(--row);
+      }
+      .btn.danger {
+        background: #fee2e2;
+        border-color: #fecaca;
+        color: #991b1b;
+      }
+      .btn.ghost {
+        background: transparent;
+      }
+      .hidden {
+        display: none;
+      }
+      .empty {
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        color: #var(--muted);
+        background: #fafafa;
+      }
+      .footer {
+        color: #var(--muted);
+        font-size: 12px;
+        text-align: center;
+        margin-top: 24px;
+      }
+      @media (max-width: 700px) {
+        .meta {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="bar">
+      <div class="brand">
+        <!-- ⚡ Delta Energy -->
+        <img
+          src="https://www.deltaenergysystems.co.ke/wp-content/uploads/2023/04/Group-236.png"
+          alt="Delta Energy"
+          style="height: 50px; vertical-align: middle; margin-right: 8px"
+        />
       </div>
-    </div>
+      <div class="sub">OCPP Live Status</div>
+    </header>
 
-    <section id="empty" class="empty hidden">
-      <h2>No chargers yet</h2>
-      <p>When a charger sends a <code>BootNotification</code>, it will appear here automatically.</p>
-    </section>
+    <main class="wrap">
+      <div class="toolbar">
+        <div class="search">
+          <input
+            id="q"
+            type="search"
+            placeholder="Search by ID, vendor, model, serial…"
+          />
+        </div>
+      </div>
 
-    <section id="grid" class="grid"></section>
-    <noscript><div class="empty">This dashboard needs JavaScript enabled.</div></noscript>
-  </main>
+      <section id="empty" class="empty hidden">
+        <h2>No chargers yet</h2>
+        <p>
+          When a charger sends a <code>BootNotification</code>, it will appear
+          here automatically.
+        </p>
+      </section>
 
-  <script>
-    // ---------- Elements ----------
-    const grid = document.getElementById('grid');
-    const empty = document.getElementById('empty');
-    const search = document.getElementById('q');
+      <section id="grid" class="grid"></section>
+      <noscript
+        ><div class="empty">
+          This dashboard needs JavaScript enabled.
+        </div></noscript
+      >
+    </main>
 
-    // Card template
-    const tpl = document.createElement('template');
-    tpl.innerHTML = `
+    <script>
+      // ---------- Elements ----------
+      const grid = document.getElementById("grid");
+      const empty = document.getElementById("empty");
+      const search = document.getElementById("q");
+
+      // Card template
+      const tpl = document.createElement("template");
+      tpl.innerHTML = `
       <article class="card">
         <div class="card-head">
           <div class="title">
@@ -116,175 +321,208 @@
       </article>
     `.trim();
 
-    // ---------- State ----------
-    const cards = {};
+      // ---------- State ----------
+      const cards = {};
 
-    // Relative time helpers
-    const rtf = ('RelativeTimeFormat' in Intl) ? new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }) : null;
-    function toRelative(iso) {
-      if (!iso) return '—';
-      const now = Date.now();
-      const then = new Date(iso).getTime();
-      const diff = Math.round((then - now) / 1000);
-      const abs = Math.abs(diff);
-      if (abs < 45) return rtf ? rtf.format(diff, 'second') : `${abs}s ago`;
-      const mins = Math.round(diff/60);
-      if (Math.abs(mins) < 45) return rtf ? rtf.format(mins, 'minute') : `${Math.abs(mins)}m ago`;
-      const hours = Math.round(mins/60);
-      if (Math.abs(hours) < 22) return rtf ? rtf.format(hours, 'hour') : `${Math.abs(hours)}h ago`;
-      const days = Math.round(hours/24);
-      if (Math.abs(days) < 26) return rtf ? rtf.format(days, 'day') : `${Math.abs(days)}d ago`;
-      const months = Math.round(days/30);
-      if (Math.abs(months) < 11) return rtf ? rtf.format(months, 'month') : `${Math.abs(months)}mo ago`;
-      const years = Math.round(days/365);
-      return rtf ? rtf.format(years, 'year') : `${Math.abs(years)}y ago`;
-    }
-    function refreshRelativeTimes(){
-      document.querySelectorAll('.lastSeen').forEach(el => {
-        const iso = el.dataset.time || '';
-        el.textContent = iso ? toRelative(iso) : '—';
-      });
-    }
-
-    function statusPillClass(s){
-      switch(s){
-        case 'Available': return 'pill avail';
-        case 'Charging': return 'pill charge';
-        case 'Reserved':
-        case 'Preparing':
-        case 'SuspendedEVSE':
-        case 'SuspendedEV':
-        case 'Finishing': return 'pill warn';
-        case 'Unavailable':
-        case 'Faulted':
-        default: return 'pill unavail';
+      // Relative time helpers
+      const rtf =
+        "RelativeTimeFormat" in Intl
+          ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+          : null;
+      function toRelative(iso) {
+        if (!iso) return "—";
+        const now = Date.now();
+        const then = new Date(iso).getTime();
+        const diff = Math.round((then - now) / 1000);
+        const abs = Math.abs(diff);
+        if (abs < 45) return rtf ? rtf.format(diff, "second") : `${abs}s ago`;
+        const mins = Math.round(diff / 60);
+        if (Math.abs(mins) < 45)
+          return rtf ? rtf.format(mins, "minute") : `${Math.abs(mins)}m ago`;
+        const hours = Math.round(mins / 60);
+        if (Math.abs(hours) < 22)
+          return rtf ? rtf.format(hours, "hour") : `${Math.abs(hours)}h ago`;
+        const days = Math.round(hours / 24);
+        if (Math.abs(days) < 26)
+          return rtf ? rtf.format(days, "day") : `${Math.abs(days)}d ago`;
+        const months = Math.round(days / 30);
+        if (Math.abs(months) < 11)
+          return rtf
+            ? rtf.format(months, "month")
+            : `${Math.abs(months)}mo ago`;
+        const years = Math.round(days / 365);
+        return rtf ? rtf.format(years, "year") : `${Math.abs(years)}y ago`;
       }
-    }
-
-    function renderCharger(c){
-      let card = cards[c.id];
-      if(!card){
-        card = tpl.content.firstElementChild.cloneNode(true);
-        cards[c.id] = card;
-        grid.appendChild(card);
+      function refreshRelativeTimes() {
+        document.querySelectorAll(".lastSeen").forEach((el) => {
+          const iso = el.dataset.time || "";
+          el.textContent = iso ? toRelative(iso) : "—";
+        });
       }
 
-      // dataset for search
-      card.dataset.id = c.id || '';
-      card.dataset.vendor = c.vendor || '';
-      card.dataset.model = c.model || '';
-      card.dataset.serial = c.serial || '';
+      function statusPillClass(s) {
+        switch (s) {
+          case "Available":
+            return "pill avail";
+          case "Charging":
+            return "pill charge";
+          case "Reserved":
+          case "Preparing":
+          case "SuspendedEVSE":
+          case "SuspendedEV":
+          case "Finishing":
+            return "pill warn";
+          case "Unavailable":
+          case "Faulted":
+          default:
+            return "pill unavail";
+        }
+      }
 
-      // header
-      card.querySelector('.cpid').textContent = c.id;
-      card.querySelector('.badge.online').classList.toggle('hidden', !c.online);
-      card.querySelector('.badge.offline').classList.toggle('hidden', !!c.online);
+      function renderCharger(c) {
+        let card = cards[c.id];
+        if (!card) {
+          card = tpl.content.firstElementChild.cloneNode(true);
+          cards[c.id] = card;
+          grid.appendChild(card);
+        }
 
-      // station pill
-      const st = c.stationStatus || '—';
-      const stationPill = card.querySelector('.station-pill');
-      stationPill.textContent = `Station: ${st}`;
-      stationPill.className = 'badge station-pill ' + (st==='Available' ? 'online' : (st==='—' ? '' : 'offline'));
+        // dataset for search
+        card.dataset.id = c.id || "";
+        card.dataset.vendor = c.vendor || "";
+        card.dataset.model = c.model || "";
+        card.dataset.serial = c.serial || "";
 
-      // meta
-      card.querySelector('.vendor').textContent = c.vendor || '—';
-      card.querySelector('.model').textContent = c.model || '—';
-      card.querySelector('.serial').textContent = c.serial || '—';
-      const lastEl = card.querySelector('.lastSeen');
-      lastEl.dataset.time = c.lastSeen || '';
-      lastEl.textContent = toRelative(c.lastSeen);
-      lastEl.title = c.lastSeen ? new Date(c.lastSeen).toLocaleString() : '—';
+        // header
+        card.querySelector(".cpid").textContent = c.id;
+        card
+          .querySelector(".badge.online")
+          .classList.toggle("hidden", !c.online);
+        card
+          .querySelector(".badge.offline")
+          .classList.toggle("hidden", !!c.online);
 
-      // connectors
-      const conns = card.querySelector('.conns');
-      conns.innerHTML = '';
-      const list = (c.connectors || []).slice().sort((a,b)=>a.id-b.id);
-      if (list.length === 0){
-        const div = document.createElement('div');
-        div.className = 'conn';
-        div.innerHTML = `<div class="row"><div>Connector(s)</div><div class="pill">No data yet</div></div>`;
-        conns.appendChild(div);
-      } else {
-        for(const k of list){
-          const div = document.createElement('div');
-          div.className = 'conn';
-          div.innerHTML = `
+        // station pill
+        const st = c.stationStatus || "—";
+        const stationPill = card.querySelector(".station-pill");
+        stationPill.textContent = `Station: ${st}`;
+        stationPill.className =
+          "badge station-pill " +
+          (st === "Available" ? "online" : st === "—" ? "" : "offline");
+
+        // meta
+        card.querySelector(".vendor").textContent = c.vendor || "—";
+        card.querySelector(".model").textContent = c.model || "—";
+        card.querySelector(".serial").textContent = c.serial || "—";
+        const lastEl = card.querySelector(".lastSeen");
+        lastEl.dataset.time = c.lastSeen || "";
+        lastEl.textContent = toRelative(c.lastSeen);
+        lastEl.title = c.lastSeen ? new Date(c.lastSeen).toLocaleString() : "—";
+
+        // connectors
+        const conns = card.querySelector(".conns");
+        conns.innerHTML = "";
+        const list = (c.connectors || []).slice().sort((a, b) => a.id - b.id);
+        if (list.length === 0) {
+          const div = document.createElement("div");
+          div.className = "conn";
+          div.innerHTML = `<div class="row"><div>Connector(s)</div><div class="pill">No data yet</div></div>`;
+          conns.appendChild(div);
+        } else {
+          for (const k of list) {
+            const div = document.createElement("div");
+            div.className = "conn";
+            div.innerHTML = `
             <div class="row">
               <div>#${k.id}</div>
               <div class="${statusPillClass(k.status)}">${k.status}</div>
             </div>
             ${k.errorCode ? `<div class="err">Error: ${k.errorCode}</div>` : ``}
           `;
-          conns.appendChild(div);
+            conns.appendChild(div);
+          }
+        }
+
+        // delete
+        card.querySelector(".delete").onclick = async () => {
+          try {
+            await fetch(`/api/v1/chargers/${encodeURIComponent(c.id)}`, {
+              method: "DELETE",
+            });
+          } catch {}
+          card.remove();
+          delete cards[c.id];
+          toggleEmpty();
+          applyFilter();
+        };
+
+        toggleEmpty();
+      }
+
+      function toggleEmpty() {
+        empty.classList.toggle("hidden", Object.keys(cards).length > 0);
+      }
+
+      // Search/filter — hide/show cards based on data-*
+      function applyFilter() {
+        const term = (search.value || "").trim().toLowerCase();
+        for (const id in cards) {
+          const el = cards[id];
+          const hay = [
+            el.dataset.id,
+            el.dataset.vendor,
+            el.dataset.model,
+            el.dataset.serial,
+          ]
+            .join(" ")
+            .toLowerCase();
+          el.style.display = term && !hay.includes(term) ? "none" : "";
         }
       }
 
-      // delete
-      card.querySelector('.delete').onclick = async () => {
-        try { await fetch(`/api/v1/chargers/${encodeURIComponent(c.id)}`, { method: 'DELETE' }); } catch {}
-        card.remove();
-        delete cards[c.id];
-        toggleEmpty();
-        applyFilter();
-      };
-
-      toggleEmpty();
-    }
-
-    function toggleEmpty(){
-      empty.classList.toggle('hidden', Object.keys(cards).length > 0);
-    }
-
-    // Search/filter — hide/show cards based on data-*
-    function applyFilter(){
-      const term = (search.value || '').trim().toLowerCase();
-      for (const id in cards){
-        const el = cards[id];
-        const hay = [el.dataset.id, el.dataset.vendor, el.dataset.model, el.dataset.serial].join(' ').toLowerCase();
-        el.style.display = term && !hay.includes(term) ? 'none' : '';
-      }
-    }
-
-    // Initial load
-    async function preload(){
-      try{
-        const res = await fetch('/api/v1/chargers', { cache: 'no-store' });
-        const data = await res.json();
-        (data?.chargers ?? []).forEach(renderCharger);
-        toggleEmpty();
-        applyFilter();
-      }catch(e){
-        console.error('Failed to load chargers', e);
-      }
-    }
-
-    // Live updates (SSE)
-    function live(){
-      const ev = new EventSource('/events');
-      ev.onmessage = (m) => {
+      // Initial load
+      async function preload() {
         try {
-          const payload = JSON.parse(m.data);
-          if (payload.type === 'upsert') {
-            renderCharger(payload.charger);
-            applyFilter();
-          } else if (payload.type === 'delete') {
-            const id = payload.id;
-            const el = cards[id];
-            if (el) { el.remove(); delete cards[id]; }
-            toggleEmpty();
-            applyFilter();
-          }
-        } catch {}
-      };
-    }
+          const res = await fetch("/api/v1/chargers", { cache: "no-store" });
+          const data = await res.json();
+          (data?.chargers ?? []).forEach(renderCharger);
+          toggleEmpty();
+          applyFilter();
+        } catch (e) {
+          console.error("Failed to load chargers", e);
+        }
+      }
 
-    // Wire events
-    search.addEventListener('input', applyFilter);
+      // Live updates (SSE)
+      function live() {
+        const ev = new EventSource("/events");
+        ev.onmessage = (m) => {
+          try {
+            const payload = JSON.parse(m.data);
+            if (payload.type === "upsert") {
+              renderCharger(payload.charger);
+              applyFilter();
+            } else if (payload.type === "delete") {
+              const id = payload.id;
+              const el = cards[id];
+              if (el) {
+                el.remove();
+                delete cards[id];
+              }
+              toggleEmpty();
+              applyFilter();
+            }
+          } catch {}
+        };
+      }
 
-    // Kickoff
-    preload();
-    live();
-    setInterval(refreshRelativeTimes, 30000);
-  </script>
-</body>
+      // Wire events
+      search.addEventListener("input", applyFilter);
+
+      // Kickoff
+      preload();
+      live();
+      setInterval(refreshRelativeTimes, 30000);
+    </script>
+  </body>
 </html>

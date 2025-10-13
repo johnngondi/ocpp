@@ -1,0 +1,122 @@
+{
+  "info": {
+    "_postman_id": "b3a5b3c1-5a3f-49ea-9a5c-ocpp-laravel",
+    "name": "OCPP → Laravel Ingress",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Create/Update chargers from Node OCPP → Laravel."
+  },
+  "item": [
+    {
+      "name": "1) BootNotification → Create/Upsert Charger (no connectors yet)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/upsert",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "upsert"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{cpId}}\",\n  \"vendor\": \"goEgo\",\n  \"model\": \"EAGLE LITE\",\n  \"serial\": \"AC0000126\",\n  \"online\": true,\n  \"lastSeen\": \"{{$timestamp}}\"\n}"
+        },
+        "description": "Create/Upsert charger on Boot. No connectors yet, site_id remains null in DB."
+      }
+    },
+    {
+      "name": "2) Station Status (connectorId = 0) → Update Charger availability",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/upsert",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "upsert"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{cpId}}\",\n  \"online\": true,\n  \"lastSeen\": \"{{$timestamp}}\",\n  \"stationStatus\": \"Available\"\n}"
+        },
+        "description": "Mirror StatusNotification with connectorId=0. Allowed values: Available | Unavailable | Faulted."
+      }
+    },
+    {
+      "name": "3) Connector Upsert (connectorId=1 → Available)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/connector",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "connector"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{cpId}}\",\n  \"connectorId\": 1,\n  \"status\": \"Available\",\n  \"online\": true,\n  \"lastSeen\": \"{{$timestamp}}\"\n}"
+        },
+        "description": "Add or update connector #1. Status values per OCPP 1.6: Available, Preparing, Charging, SuspendedEV, SuspendedEVSE, Finishing, Reserved, Unavailable, Faulted."
+      }
+    },
+    {
+      "name": "3b) Connector Upsert (connectorId=2 → Faulted w/ error)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/connector",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "connector"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{cpId}}\",\n  \"connectorId\": 2,\n  \"status\": \"Faulted\",\n  \"errorCode\": \"GroundFailure\",\n  \"online\": true,\n  \"lastSeen\": \"{{$timestamp}}\"\n}"
+        },
+        "description": "Example of a faulted connector with error code."
+      }
+    },
+    {
+      "name": "4) Mark Offline (WS closed) → Set charger & connectors Unavailable",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/offline/{{cpId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "offline", "{{cpId}}"]
+        },
+        "description": "Simulate Node WS close; Laravel marks charger offline and sets all connectors to Unavailable."
+      }
+    },
+    {
+      "name": "5) Bulk Sync (send your chargers.json whole array)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/ocpp/sync",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "ocpp", "sync"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"chargers\": [\n    {\n      \"id\": \"{{cpId}}\",\n      \"vendor\": \"goEgo\",\n      \"model\": \"EAGLE LITE\",\n      \"serial\": \"AC0000126\",\n      \"online\": true,\n      \"lastSeen\": \"{{$timestamp}}\",\n      \"stationStatus\": \"Available\",\n      \"connectors\": [\n        {\"id\":1, \"status\":\"Available\", \"updatedAt\":\"{{$timestamp}}\"}\n      ]\n    }\n  ]\n}"
+        },
+        "description": "Push the entire chargers.json payload if you prefer batch syncing."
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "cpId", "value": "CP-01" }
+  ]
+}

@@ -30,6 +30,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const ws_1 = require("ws");
 const routers_1 = __importDefault(require("./routers"));
+const notifier = __importStar(require("./notifier"));
 // NEW: state + live updates for the dashboard
 const store = __importStar(require("./store"));
 const sse_1 = require("./sse");
@@ -135,14 +136,14 @@ wss.on("connection", (ws, request) => {
         catch (_b) { }
     }, 30000);
     ws.on("message", (data) => {
-        var _a;
+        var _a, _b;
         const text = data.toString();
         console.log(`[${cpId}] →`, text);
         let frame;
         try {
             frame = JSON.parse(text);
         }
-        catch (_b) {
+        catch (_c) {
             // No valid uniqueId to echo → close with protocol error (don't fabricate ids)
             ws.close(1002, "Protocol error: invalid JSON");
             return;
@@ -153,19 +154,41 @@ wss.on("connection", (ws, request) => {
         }
         const [msgType, uniqueId, action, payload] = frame;
         // We only handle client CALLs here: [2, "<id>", "<Action>", {..}]
-        if (msgType !== 2 || typeof uniqueId !== "string" || typeof action !== "string") {
+        if (msgType !== 2 ||
+            typeof uniqueId !== "string" ||
+            typeof action !== "string") {
             return; // ignore (could also close with FormationViolation)
         }
         switch (action) {
             case "BootNotification": {
                 // Persist minimal charger meta + mark online
+                const serial = (payload === null || payload === void 0 ? void 0 : payload.chargePointSerialNumber) ||
+                    (payload === null || payload === void 0 ? void 0 : payload.chargeBoxSerialNumber) ||
+                    "";
+                const vendor = payload === null || payload === void 0 ? void 0 : payload.chargePointVendor;
+                const model = payload === null || payload === void 0 ? void 0 : payload.chargePointModel;
                 const c = store.upsertCharger(cpId, {
-                    vendor: payload === null || payload === void 0 ? void 0 : payload.chargePointVendor,
-                    model: payload === null || payload === void 0 ? void 0 : payload.chargePointModel,
-                    serial: (payload === null || payload === void 0 ? void 0 : payload.chargePointSerialNumber) || (payload === null || payload === void 0 ? void 0 : payload.chargeBoxSerialNumber),
+                    vendor,
+                    model,
+                    serial,
                     online: true,
                 });
                 (0, sse_1.pushUpsert)(c); // notify UI
+                if (serial) {
+                    notifier
+                        .sendUpsertCharger({
+                        serial,
+                        vendor,
+                        model,
+                        online: true,
+                        lastSeen: new Date().toISOString(),
+                        // no stationStatus here; that will come from connectorId=0 StatusNotification
+                    })
+                        .catch((err) => console.error(`[notify] upsert boot failed for ${serial}:`, err.message));
+                }
+                else {
+                    console.warn(`[notify] Boot with no serial for cpId=${cpId}; skipping Laravel upsert`);
+                }
                 // Reply with SAME uniqueId
                 sendCallResult(ws, uniqueId, {
                     currentTime: new Date().toISOString(),
@@ -182,13 +205,64 @@ wss.on("connection", (ws, request) => {
                     ? store.updateStationStatus(cpId, status, errorCode)
                     : store.updateConnector(cpId, connectorId, status, errorCode);
                 (0, sse_1.pushUpsert)(updated);
-                sendCallResult(ws, uniqueId, {}); // empty result per spec
+                sendCallResult(ws, uniqueId, {});
+                // Notify Laravel
+                const cp = store.getById(cpId);
+                const serial = cp === null || cp === void 0 ? void 0 : cp.serial;
+                const lastSeen = new Date().toISOString();
+                if (!serial) {
+                    console.warn(`[notify] StatusNotification but serial missing for cpId=${cpId}`);
+                    break;
+                }
+                if (connectorId == 0) {
+                    // station-level (maps to ChargerStatus tri-state in Laravel)
+                    // Only send the three states your Laravel enum supports
+                    let stationStatus;
+                    if (status == "Available")
+                        stationStatus = "Available";
+                    else if (status == "Faulted")
+                        stationStatus = "Faulted";
+                    else
+                        stationStatus = "Unavailable";
+                    notifier
+                        .sendUpsertCharger({
+                        serial,
+                        online: true,
+                        lastSeen,
+                        stationStatus,
+                    })
+                        .catch((err) => console.error(`[notify] station upsert failed for ${serial}:`, err.message));
+                }
+                else {
+                    // per-connector update
+                    notifier
+                        .sendConnector({
+                        serial,
+                        connectorId,
+                        status,
+                        errorCode: errorCode === "NoError" ? undefined : errorCode,
+                        online: true,
+                        lastSeen,
+                    })
+                        .catch((err) => console.error(`[notify] connector upsert failed for ${serial}#${connectorId}:`, err.message));
+                }
                 break;
             }
             case "Heartbeat": {
                 const c = store.upsertCharger(cpId, { online: true });
                 (0, sse_1.pushUpsert)(c);
                 sendCallResult(ws, uniqueId, { currentTime: new Date().toISOString() });
+                // Notify Laravel (only if we know the serial)
+                const serial = (_b = store.getById(cpId)) === null || _b === void 0 ? void 0 : _b.serial;
+                if (serial) {
+                    notifier
+                        .sendUpsertCharger({
+                        serial,
+                        online: true,
+                        lastSeen: new Date().toISOString(),
+                    })
+                        .catch((err) => console.error(`[notify] heartbeat upsert failed for ${serial}:`, err.message));
+                }
                 break;
             }
             case "Authorize": {
@@ -219,8 +293,16 @@ wss.on("connection", (ws, request) => {
     ws.on("close", () => {
         clearInterval(ka);
         const c = store.markDisconnected(cpId);
-        if (c)
+        if (c) {
             (0, sse_1.pushUpsert)(c);
+            if (c.serial) {
+                notifier.sendOffline(c.serial)
+                    .catch(err => console.error(`[notify] offline failed for ${c.serial}:`, err.message));
+            }
+            else {
+                console.warn(`[notify] offline: no serial for cpId=${cpId}`);
+            }
+        }
         console.log(`WebSocket closed (${cpId})`);
     });
 });

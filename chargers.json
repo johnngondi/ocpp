@@ -1,20 +1,34 @@
 {
   "chargers": [
     {
-      "id": "CP-01",
-      "online": true,
-      "lastSeen": "2025-09-29T18:15:36.120Z",
+      "id": "AC0000127",
+      "online": false,
+      "lastSeen": "2025-10-13T17:39:58.637Z",
       "connectors": [
         {
           "id": 1,
           "status": "Available",
-          "updatedAt": "2025-09-29T18:15:36.120Z"
+          "updatedAt": "2025-10-13T16:54:28.556Z"
         }
       ],
-      "vendor": "goEgo",
-      "model": "EAGLE LITE",
-      "serial": "AC0000126",
-      "stationStatus": "Available"
+      "vendor": "AlienSoft Technologies",
+      "model": "ASTMODEL-1",
+      "serial": "SIM-AC0000127"
+    },
+    {
+      "id": "AC0000128",
+      "online": false,
+      "lastSeen": "2025-10-13T17:39:58.623Z",
+      "connectors": [
+        {
+          "id": 1,
+          "status": "Available",
+          "updatedAt": "2025-10-13T16:54:19.853Z"
+        }
+      ],
+      "vendor": "AlienSoft Technologies",
+      "model": "ASTMODEL-1",
+      "serial": "SIM-AC0000128"
     }
   ]
 }

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeCharger = exports.markDisconnected = exports.updateConnector = exports.updateStationStatus = exports.upsertCharger = exports.all = void 0;
+exports.getById = exports.removeCharger = exports.markDisconnected = exports.updateConnector = exports.updateStationStatus = exports.upsertCharger = exports.all = void 0;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const FILE = node_path_1.default.resolve(process.cwd(), "chargers.json");
@@ -78,3 +78,8 @@ function removeCharger(id) {
     return state.chargers.length !== before;
 }
 exports.removeCharger = removeCharger;
+// store.ts
+function getById(id) {
+    return state.chargers.find(x => x.id === id) || null;
+}
+exports.getById = getById;

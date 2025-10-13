@@ -2,8 +2,8 @@
   "chargers": [
     {
       "id": "AC0000127",
-      "online": false,
-      "lastSeen": "2025-10-13T17:39:58.637Z",
+      "online": true,
+      "lastSeen": "2025-10-13T20:45:56.512Z",
       "connectors": [
         {
           "id": 1,

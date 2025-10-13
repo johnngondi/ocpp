@@ -11,11 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendBulk = exports.sendOffline = exports.sendConnector = exports.sendUpsertCharger = void 0;
-const BASE = ((_a = process.env.LARAVEL_BASE_URL) === null || _a === void 0 ? void 0 : _a.replace(/\/+$/, "")) || "http://ocpp.test";
+const BASE = ((_a = process.env.LARAVEL_BASE_URL) === null || _a === void 0 ? void 0 : _a.replace(/\/+$/, "")) || "http://ocpp-dash.laravelkenya.org";
 const SECRET = process.env.LARAVEL_TOKEN || "";
 function postJson(path, body, method = "POST", attempt = 1) {
     return __awaiter(this, void 0, void 0, function* () {
         const url = `${BASE}${path}`;
+        console.log(url);
         const headers = {
             "content-type": "application/json",
         };

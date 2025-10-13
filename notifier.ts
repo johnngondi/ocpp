@@ -5,6 +5,9 @@ const SECRET = process.env.LARAVEL_TOKEN || "";
 
 async function postJson(path: string, body?: Json, method = "POST", attempt = 1): Promise<any> {
   const url = `${BASE}${path}`;
+
+  console.log(url);
+
   const headers: Record<string, string> = {
     "content-type": "application/json",
   };

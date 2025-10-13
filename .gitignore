@@ -100,4 +100,4 @@ dist
 # TernJS port file
 .tern-port
 
-chargers.json
+*.json
